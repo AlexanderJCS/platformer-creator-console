@@ -20,16 +20,20 @@ After navigating to the latest release, download the zipped folder with the comp
 
 Just a note before proceeding: this project is made in Visual Studio 2022. If you have any issues with the g++ compiler, please check if it compiles in Visual Studio.
 
--- SECTION WORK IN PROGRESS --
+To compile, use `g++ ConsolePlatformer.cpp level_utils.cpp`
 
 ### Creating your own level
 
 Create a new text file in the same directory as the executable file. Then, draw out your level with spaces and "X"s. Use P to spawn a player object. The program may not work without a player.
 
+## Compatibility
+
+This program only works on Windows with consoles that support ANSI escape codes.
+
 ## Known Issues
 
 - Clipping into objects
-- 20+ compiler warnings
+- 20+ compiler warnings in Visual Studio
 
 ## Work in Progress
 
