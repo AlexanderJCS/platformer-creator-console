@@ -28,7 +28,8 @@ Create a new text file in the same directory as the executable file. Then, draw 
 
 ## Known Issues
 
-- Clipping into objects 
+- Clipping into objects
+- 20+ compiler warnings
 
 ## Work in Progress
 
