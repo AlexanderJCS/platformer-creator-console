@@ -33,7 +33,7 @@ This program only works on Windows with consoles that support ANSI escape codes.
 ## Known Issues
 
 - Clipping into objects
-- 20+ compiler warnings in Visual Studio
+- 10+ compiler warnings in Visual Studio
 
 ## Work in Progress
 
