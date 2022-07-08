@@ -13,14 +13,6 @@ const float GRAVITY = 0.35;
 const float JUMP_VEL = 1.9;
 
 
-void swapVars(int &a, int &b)
-{
-	int temp = a;
-	a = b;
-	b = temp;
-}
-
-
 class Game
 {
 	// Allow for multiple player objects
@@ -92,9 +84,6 @@ class Game
 		{
 			return findItemIndex(target, middle, end);
 		}
-		
-		// Not needed but prevents a compiler warning
-		return -1;
 	}
 
 	bool validMove(int x, int y)
@@ -188,49 +177,43 @@ class Game
 			player.yVel += GRAVITY;
 		}
 	}
-
-	void movePlayers()
+	
+	void fallPlayers()
 	{
 		for (auto& player : players)
 		{
-			int originalX = round(player.x);
-			int originalY = round(player.y);
-			int newX = round(player.x + player.xVel);
-			int newY = round(player.y + player.yVel);
+			double fallenY = player.y + player.yVel;
 
-			if (originalX > newX)
-			{
-				swapVars(originalX, newX);
-			}
-
-			if (originalY > newY)
-			{
-				swapVars(originalY, newY);
-			}
-
-			for (int i = originalX; i <= newX; i++)
-			{
-				if (!validMove(i, round(player.y)))
-				{
-					player.x = i - 1;
-					player.xVel = 0;
-					break;
-				}
-			}
+			bool valid = true;
 			
-			player.x = player.x + player.xVel;
-
-			for (int i = originalY; i <= newY; i++)
+			// If the player is moving downwards
+			for (int i = player.y; i <= round(fallenY); i++)
 			{
-				if (!validMove(round(player.x), i))
+				if (!validMove(player.x, i))
 				{
 					player.y = i - 1;
 					player.yVel = 0;
+					valid = false;
 					break;
 				}
 			}
 
-			player.y = player.y + player.yVel;
+			// If the player is moving upwards
+			for (int i = player.y; i >= round(fallenY); i--)
+			{
+				if (!validMove(player.x, i))
+				{
+					player.y = i + 1;
+					player.yVel = 0;
+					valid = false;
+					break;
+				}
+			}
+
+			if (valid)
+			{
+				player.y = fallenY;
+			}
 		}
 	}
 
@@ -241,7 +224,8 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(round(player.x), std::floor(player.y + 1)))
+				// If the player is on the ground
+				if (findCharAtCoords(player.x, std::ceil(player.y) + 1) != ' ')
 				{
 					player.yVel -= JUMP_VEL;
 				}
@@ -253,24 +237,22 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				player.xVel = 1;
+				if (validMove(player.x + 1, round(player.y)))
+				{
+					player.x++;
+				}
 			}
 		}
 
 		// Move left
-		else if (GetAsyncKeyState('A'))
+		if (GetAsyncKeyState('A'))
 		{
 			for (auto& player : players)
 			{
-				player.xVel = -1;
-			}
-		}
-
-		else
-		{
-			for (auto& player : players)
-			{
-				player.xVel = 0;
+				if (validMove(player.x - 1, round(player.y)))
+				{
+					player.x--;
+				}
 			}
 		}
 	}
@@ -316,7 +298,7 @@ public:
 		{
 			draw();
 			applyGravity();
-			movePlayers();
+			fallPlayers();
 			getInput();
 			Sleep(50);
 		}
