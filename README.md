@@ -7,6 +7,9 @@ This project allows you to create your own platformer by modifying a .txt file- 
 
 ![image](https://user-images.githubusercontent.com/98898166/177667224-f5fa709d-b6a7-4cc5-a332-b04f96708348.png)
 
+## Compatibility
+
+This program only works on Windows with consoles that support ANSI escape codes.
 
 ## Setup
 
@@ -25,10 +28,6 @@ To compile, use `g++ ConsolePlatformer.cpp level_utils.cpp`
 ### Creating your own level
 
 Create a new text file in the same directory as the executable file. Then, draw out your level with spaces and "X"s. Use P to spawn a player object. The program may not work without a player.
-
-## Compatibility
-
-This program only works on Windows with consoles that support ANSI escape codes.
 
 ## Known Issues
 
