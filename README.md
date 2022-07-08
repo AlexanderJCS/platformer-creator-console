@@ -3,7 +3,7 @@ Create your own platformer level in the console using a .txt file
 
 ## About
 
-This project allows you to create your own platformer by modifying a .txt file- like Super Mario Maker but in the console.
+This project allows you to create your own platformer by modifying a .txt file, like Super Mario Maker but in the console.
 
 ![image](https://user-images.githubusercontent.com/98898166/177667224-f5fa709d-b6a7-4cc5-a332-b04f96708348.png)
 
