@@ -32,11 +32,11 @@ This program only works on Windows with consoles that support ANSI escape codes.
 
 ## Known Issues
 
-- Clipping into objects
-- 10+ compiler warnings in Visual Studio
+- Player cancels velocity before completely touching floor (medium-low severity)
+- 10+ compiler warnings in Visual Studio (medium-low severity)
 
 ## Work in Progress
 
-- End goal
+- Goal
 - Enemies
 - Powerups
