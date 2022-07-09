@@ -34,8 +34,8 @@ Create a new text file in the same directory as the executable file. Then, draw 
 - Player cancels velocity before completely touching floor (medium-low severity)
 - 10+ compiler warnings in Visual Studio (medium-low severity)
 
-## Work in Progress
+## Planned Features
 
-- Goal
+- Colors
 - Enemies
 - Powerups
