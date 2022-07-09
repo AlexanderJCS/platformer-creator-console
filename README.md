@@ -31,7 +31,8 @@ Create a new text file in the same directory as the executable file. Then, draw 
 
 ## Known Issues
 
-- Player cancels velocity before completely touching floor (medium-low severity)
+- The leftmost column of a level is not visible
+- Player cancels velocity before completely touching floor (medium severity)
 - 10+ compiler warnings in Visual Studio (medium-low severity)
 
 ## Planned Features
