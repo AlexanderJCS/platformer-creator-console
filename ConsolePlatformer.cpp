@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -21,6 +22,18 @@ void swapVars(int &a, int &b)
 }
 
 
+void ShowConsoleCursor(bool showFlag)
+{
+	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	CONSOLE_CURSOR_INFO cursorInfo;
+
+	GetConsoleCursorInfo(out, &cursorInfo);
+	cursorInfo.bVisible = showFlag;
+	SetConsoleCursorInfo(out, &cursorInfo);
+}
+
+
 class Game
 {
 	// Allow for multiple player objects
@@ -28,48 +41,50 @@ class Game
 	// Managing two players can make for some interesting levels, though
 	std::vector<gameObject> players;
 	std::vector<gameObject> gameObjects;
+	std::vector<gameObject> goals;
 
 	int width = 0;
 	int height = 0;
 
 	// Finds the char of the object at x, y
 	// Mainly used for the draw method
-	char findCharAtCoords(int x, int y)
+	char findCharAtCoords(int x, int y, std::vector<gameObject> objects)
 	{
-		if (x < 0 || x >= width || y < 0 || y > height)
+		if (x < 0 || x > width || y < 0 || y > height)
 		{
 			return ' ';
 		}
 		
 		// Find the index of the x value
-		int xIndex = findItemIndex(x, 0, gameObjects.size());
+		int xIndex = findItemIndex(x, 0, objects.size(), objects);
 		
+		// If it could not find the index, return nothing
 		if (xIndex == -1)
 		{
 			return ' ';
 		}
 
 		// Go to the first index with the x value
-		for (int i = xIndex; gameObjects[i].x == x && x >= 0; i--)
+		for (int i = xIndex; x >= 0 && objects[i].x == x ; i--)
 		{
 			xIndex = i;
 		}
 
 		// Var index is now at the first value
 		// Now, iterate through all x values to see if the y matches
-		for (int i = xIndex; gameObjects[i].x == x; i++)
+		for (int i = xIndex; i < objects.size() && i >= 0 && round(objects[i].x) == x; i++)
 		{
-			if (gameObjects[i].y == y)
+			if (round(objects[i].y) == y)
 			{
-				return gameObjects[i].symbol;
+				return objects[i].symbol;
 			}
 		}
-
+		
 		return ' ';
 	}
 
 	// Finds the index of an item with a certain x value
-	int findItemIndex(int target, int start, int end)
+	int findItemIndex(int target, int start, int end, std::vector<gameObject> objects)
 	{
 		if (start + 1 == end)
 		{
@@ -78,19 +93,19 @@ class Game
 		
 		int middle = (start + end) / 2;
 
-		if (gameObjects[middle].x == target)
+		if (objects[middle].x == target)
 		{
 			return middle;
 		}
 
-		if (gameObjects[middle].x > target)
+		if (objects[middle].x > target)
 		{
-			return findItemIndex(target, start, middle);
+			return findItemIndex(target, start, middle, objects);
 		}
 
-		if (gameObjects[middle].x < target)
+		if (objects[middle].x < target)
 		{
-			return findItemIndex(target, middle, end);
+			return findItemIndex(target, middle, end, objects);
 		}
 		
 		// Not needed but prevents a compiler warning
@@ -99,39 +114,27 @@ class Game
 
 	bool validMove(int x, int y)
 	{
-		if (x <= 0 || x >= width)
+		if (x <= 0 || x > width)
 		{
 			return false;
 		}
 		
-		int index = findItemIndex(x, 0, gameObjects.size());
-
-		if (index == -1)
+		if (findCharAtCoords(x, y, gameObjects) == ' ')
 		{
 			return true;
 		}
-
-		// Go to the first index with the x value
-		for (int i = index; gameObjects[i].x == x; i--)
-		{
-			index = i;
-		}
-
-		// Var index is now at the first value
-		// Now, iterate through all x values to see if the y matches
-		for (int i = index; gameObjects[i].x == x; i++)
-		{
-			if (gameObjects[i].y == y)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		
+		return false;
 	}
 
 	void draw()
 	{
+		std::vector<gameObject> allObjects = gameObjects;
+		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
+		allObjects.insert(allObjects.end(), players.begin(), players.end());
+
+		std::sort(allObjects.begin(), allObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
+
 		std::cout << "\033[1;1H";  // Move cursor to top left
 
 		// Draw top border
@@ -151,25 +154,14 @@ class Game
 				 x <= players[0].x + SCREEN_WIDTH / 2; 
 				 x++)
 			{
-				// Iterate through all player objects and see if the x and y match
-				// This is less efficient than it could be, but it does not matter
-				// Considering most of the time, there is only 1 player object
-				bool foundPlayer = false;
-
-				for (auto& player : players)
-				{
-					if (round(player.x) == x && round(player.y) == y)
-					{
-						std::cout << "O ";
-						foundPlayer = true;
-						break;
-					}
-				}
+				char symbol = findCharAtCoords(x, y, allObjects);
 				
-				if (!foundPlayer)
-				{ 
-					std::cout << findCharAtCoords(x, y) << " ";
+				if (symbol == 'P')
+				{
+					symbol = 'O';
 				}
+
+				std::cout << symbol << " ";
 			}
 			std::cout << "#\n";	
 		}
@@ -273,6 +265,55 @@ class Game
 		}
 	}
 
+	bool died()
+	{
+		for (auto& player : players)
+		{
+			if (player.y > height && player.y > SCREEN_HEIGHT)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	/*
+	Check if a game object is outside the screen. If it is,
+	expand the width or height to fit it.
+	*/
+
+	void checkIfNewSize(gameObject gameObj)
+	{
+		if (gameObj.x > width)
+		{
+			width = gameObj.x;
+		}
+
+		if (gameObj.y > height)
+		{
+			height = gameObj.y;
+		}
+	}
+
+	bool won()
+	{
+		for (auto& player : players)
+		{
+			for (auto& goal : goals)
+			{
+				if (round(player.x) == round(goal.x) &&
+					round(player.y) == round(goal.y))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 public:
 	Game()
 	{
@@ -282,40 +323,53 @@ public:
 		
 		auto contents = read_file(filename);
 		auto formatted = format_contents(contents);
-
+		
 		// Decide if the gameObject goes in the players or gameObjects vector
 		for (gameObject& gameObj : formatted)
 		{
+			checkIfNewSize(gameObj);
+			
 			if (gameObj.symbol == 'P')
 			{
 				players.push_back(gameObj);
 			}
 
+			else if (gameObj.symbol == 'G')
+			{
+				goals.push_back(gameObj);
+			}
+
 			else
 			{
 				gameObjects.push_back(gameObj);
-
-				if (gameObj.x > width)
-				{
-					width = gameObj.x;
-				}
-
-				if (gameObj.y > height)
-				{
-					height = gameObj.y;
-				}
 			}
 		}
 	}
-
+	
 	void run()
 	{
 		while (true)
-		{
-			draw();
+		{	
 			applyGravity();
 			movePlayers();
+			ShowConsoleCursor(false);
+			draw();
 			getInput();
+			
+			if (won())
+			{
+				std::cout << "\nYou won!" << std::endl;
+				Sleep(4000);
+				return;
+			}
+
+			if (died())
+			{
+				std::cout << "\nYou died." << std::endl;
+				Sleep(4000);
+				return;
+			}
+
 			Sleep(50);
 		}
 	}
@@ -324,6 +378,7 @@ public:
 
 int main()
 {
+	system("cls");
 	Game g;
 	g.run();
 	return 0;
