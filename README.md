@@ -25,18 +25,42 @@ Just a note before proceeding: this project is made in Visual Studio 2022. If yo
 
 To compile, use `g++ ConsolePlatformer.cpp level_utils.cpp`
 
-### Creating your own level
+## Creating your own level
 
-Create a new text file in the same directory as the executable file. Then, draw out your level with spaces and "X"s. Use P to spawn a player object. The program may not work without a player.
+In the levels directory, create a new folder. The folder name will be your level name. Inside, create two files: `level.txt` and `colors.txt`. The level will not work without these two files.
+
+### level.txt
+
+In `level.txt`, create your level using spaces as air and other characters as ground. The "X" character is recommended as ground. Some characters have special behavior:
+
+- O (uppercase o, not zero): Player
+- G: goal
+
+**Every level needs a player to be ran. Otherwise, it will crash.** 
+
+Some things to keep in mind:
+- Multiple players can be spawned. This can make some interesting game mechanics.
+- A goal allows the player to win upon touching it.
+
+An example of `level.txt` looks like this:
+![image](https://user-images.githubusercontent.com/98898166/178369871-d2cdf371-f7ec-4e41-9af9-b06b1545dedf.png)
+
+### colors.txt
+
+The `colors.txt` file has the object that is colored and a corresponding ANSI escape code. Keep in mind that the entire ANSI escape code is not written, only everything after the `[`. For example, if the ANSI escape code is `\u001b[31;1m`, only `31;1m` will be typed in the colors.txt file. An example of the colors.txt file looks like this:
+```
+O 34;1m
+G 32m
+```
 
 ## Known Issues
 
 - The leftmost column of a level is not visible
-- Player cancels velocity before completely touching floor (medium severity)
-- 10+ compiler warnings in Visual Studio (medium-low severity)
+- 10+ compiler warnings in Visual Studio
 
 ## Planned Features
 
-- Colors
+- Default levels
 - Enemies
+- Death objects/spikes
 - Powerups
