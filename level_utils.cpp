@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <map>
 
 
 struct gameObject
@@ -65,4 +66,20 @@ std::vector<gameObject> format_contents(std::vector<std::string> contents)
 	std::sort(formatted_contents.begin(), formatted_contents.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
 
 	return formatted_contents;
+}
+
+std::map<std::string, std::string> parse_config(std::string filepath)
+{
+	std::map<std::string, std::string> config;
+	std::vector<std::string> contents = read_file(filepath);
+	
+	for (int i = 0; i < contents.size(); i++)
+	{
+		std::string line = contents[i];
+		std::string key = line.substr(0, line.find(' '));
+		std::string value = line.substr(line.find(' ') + 1);
+		config[key] = value;
+	}
+	
+	return config;
 }

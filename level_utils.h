@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <map>
 
 struct gameObject
 {
@@ -13,3 +14,4 @@ struct gameObject
 
 std::vector<std::string> read_file(std::string filename);
 std::vector<gameObject> format_contents(std::vector<std::string> contents);
+std::map<std::string, std::string> parse_config(std::string filepath);

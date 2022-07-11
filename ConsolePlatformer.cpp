@@ -1,12 +1,12 @@
-#include <Windows.h>
+#include <windows.h>
 #include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <cmath>
+#include <map>
 
 #include "level_utils.h"
-
 
 const short SCREEN_WIDTH = 30;
 const short SCREEN_HEIGHT = 10;
@@ -14,7 +14,7 @@ const float GRAVITY = 0.35;
 const float JUMP_VEL = 1.9;
 
 
-void swapVars(int &a, int &b)
+void swapVars(int& a, int& b)
 {
 	int temp = a;
 	a = b;
@@ -42,6 +42,7 @@ class Game
 	std::vector<gameObject> players;
 	std::vector<gameObject> gameObjects;
 	std::vector<gameObject> goals;
+	std::map<std::string, std::string> colorData;
 
 	int width = 0;
 	int height = 0;
@@ -54,10 +55,10 @@ class Game
 		{
 			return ' ';
 		}
-		
+
 		// Find the index of the x value
 		int xIndex = findItemIndex(x, 0, objects.size(), objects);
-		
+
 		// If it could not find the index, return nothing
 		if (xIndex == -1)
 		{
@@ -65,7 +66,7 @@ class Game
 		}
 
 		// Go to the first index with the x value
-		for (int i = xIndex; x >= 0 && objects[i].x == x ; i--)
+		for (int i = xIndex; x >= 0 && objects[i].x == x; i--)
 		{
 			xIndex = i;
 		}
@@ -79,7 +80,7 @@ class Game
 				return objects[i].symbol;
 			}
 		}
-		
+
 		return ' ';
 	}
 
@@ -90,7 +91,7 @@ class Game
 		{
 			return -1;
 		}
-		
+
 		int middle = (start + end) / 2;
 
 		if (objects[middle].x == target)
@@ -107,7 +108,7 @@ class Game
 		{
 			return findItemIndex(target, middle, end, objects);
 		}
-		
+
 		// Not needed but prevents a compiler warning
 		return -1;
 	}
@@ -118,12 +119,12 @@ class Game
 		{
 			return false;
 		}
-		
+
 		if (findCharAtCoords(x, y, gameObjects) == ' ')
 		{
 			return true;
 		}
-		
+
 		return false;
 	}
 
@@ -150,20 +151,21 @@ class Game
 		{
 			std::cout << "#";
 
-			for (int x = players[0].x - SCREEN_WIDTH / 2; 
-				 x <= players[0].x + SCREEN_WIDTH / 2; 
-				 x++)
+			for (int x = players[0].x - SCREEN_WIDTH / 2;
+				x <= players[0].x + SCREEN_WIDTH / 2;
+				x++)
 			{
 				char symbol = findCharAtCoords(x, y, allObjects);
-				
-				if (symbol == 'P')
+
+				if (colorData.find(std::string(1, symbol)) != colorData.end())
 				{
-					symbol = 'O';
+					std::string ansi_code = colorData[std::string(1, symbol)];
+					std::cout << "\u001b[" + ansi_code;
 				}
 
-				std::cout << symbol << " ";
+				std::cout << symbol << " \u001b[0m";
 			}
-			std::cout << "#\n";	
+			std::cout << "#\n";
 		}
 
 		// Draw bottom border
@@ -185,22 +187,24 @@ class Game
 	{
 		for (auto& player : players)
 		{
-			int originalX = round(player.x);
-			int originalY = round(player.y);
-			int newX = round(player.x + player.xVel);
-			int newY = round(player.y + player.yVel);
+			float originalX = player.x;
+			float originalY = player.y;
+			int x1 = round(player.x);
+			int y1 = round(player.y);
+			int x2 = round(player.x + player.xVel);
+			int y2 = round(player.y + player.yVel);
 
-			if (originalX > newX)
+			if (x1 > x2)
 			{
-				swapVars(originalX, newX);
+				swapVars(x1, x2);
 			}
 
-			if (originalY > newY)
+			if (y1 > y2)
 			{
-				swapVars(originalY, newY);
+				swapVars(y1, y2);
 			}
 
-			for (int i = originalX; i <= newX; i++)
+			for (int i = x1; i <= x2; i++)
 			{
 				if (!validMove(i, round(player.y)))
 				{
@@ -208,19 +212,27 @@ class Game
 					break;
 				}
 			}
-			
-			player.x = player.x + player.xVel;
 
-			for (int i = originalY; i <= newY; i++)
+			if (player.xVel != 0)
+			{
+				player.x += player.xVel;
+			}
+
+			for (int i = y1; i <= y2; i++)
 			{
 				if (!validMove(round(player.x), i))
 				{
 					player.yVel = 0;
 					break;
 				}
+
+				player.y = i;
 			}
 
-			player.y = player.y + player.yVel;
+			if (player.yVel != 0)  // If the loop was not broken out of
+			{
+				player.y = originalY + player.yVel;
+			}
 		}
 	}
 
@@ -231,7 +243,7 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(round(player.x), std::floor(player.y + 1)))
+				if (!validMove(round(player.x), std::floor(player.y + 1)) && player.yVel == 0)
 				{
 					player.yVel -= JUMP_VEL;
 				}
@@ -317,19 +329,19 @@ class Game
 public:
 	Game()
 	{
-		std::cout << "Input the level filename:\n> ";
-		std::string filename;
-		std::cin >> filename;
-		
-		auto contents = read_file(filename);
+		std::cout << "Input the level name:\n> ";
+		std::string levelname;
+		std::cin >> levelname;
+
+		auto contents = read_file("levels/" + levelname + "/level.txt");
 		auto formatted = format_contents(contents);
-		
+
 		// Decide if the gameObject goes in the players or gameObjects vector
 		for (gameObject& gameObj : formatted)
 		{
 			checkIfNewSize(gameObj);
-			
-			if (gameObj.symbol == 'P')
+
+			if (gameObj.symbol == 'O')
 			{
 				players.push_back(gameObj);
 			}
@@ -344,18 +356,21 @@ public:
 				gameObjects.push_back(gameObj);
 			}
 		}
+
+		// Get the color map
+		colorData = parse_config("levels/" + levelname + "/colors.txt");
 	}
-	
+
 	void run()
 	{
 		while (true)
-		{	
+		{
 			applyGravity();
 			movePlayers();
 			ShowConsoleCursor(false);
 			draw();
 			getInput();
-			
+
 			if (won())
 			{
 				std::cout << "\nYou won!" << std::endl;
