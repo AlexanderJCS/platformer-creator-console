@@ -137,6 +137,7 @@ class Game
 		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
 		allObjects.insert(allObjects.end(), players.begin(), players.end());
 		allObjects.insert(allObjects.end(), roombas.begin(), roombas.end());
+		allObjects.insert(allObjects.end(), spikes.begin(), spikes.end());
 
 		std::sort(allObjects.begin(), allObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
 
