@@ -63,5 +63,6 @@ G 32m
 ## Planned Features
 
 - Default levels
+- Allow leniency with jumps (allows the player to jump when on air for a split second) 
 - Configuration files to change how the level behaves
 - Powerups
