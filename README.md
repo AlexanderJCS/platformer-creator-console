@@ -38,6 +38,8 @@ In `level.txt`, create your level using spaces as air and other characters as gr
 
 - O (uppercase o, not zero): Player
 - G: goal
+- @: roomba (enemy)
+- *: spike
 
 **Every level needs a player to be ran. Otherwise, it will crash.** 
 
