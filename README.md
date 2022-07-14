@@ -61,6 +61,7 @@ G 32m
 ## Known Issues
 
 - 10+ compiler warnings in Visual Studio
+- Cannot jump when there is 1 char of free space above you
 
 ## Planned Features
 
