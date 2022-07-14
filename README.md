@@ -9,7 +9,10 @@ This project allows you to create your own platformer by modifying a .txt file, 
 
 ## Compatibility
 
-This program only works on Windows with consoles that support ANSI escape codes.
+This program only works on: 
+- Windows
+- consoles that support ANSI escape codes
+- C++17 (if you are compiling yourself)
 
 ## Setup
 
