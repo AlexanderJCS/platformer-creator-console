@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -68,6 +69,7 @@ std::vector<gameObject> format_contents(std::vector<std::string> contents)
 	return formatted_contents;
 }
 
+
 std::map<std::string, std::string> parse_config(std::string filepath)
 {
 	std::map<std::string, std::string> config;
@@ -82,4 +84,17 @@ std::map<std::string, std::string> parse_config(std::string filepath)
 	}
 	
 	return config;
+}
+
+
+std::vector<std::string> getDirectories(std::string filepath)
+{
+	std::vector<std::string> directories;
+
+	for (const auto& file : std::filesystem::directory_iterator{ filepath })
+	{
+		std::cout << file.path().string().substr(7, file.path().string().length() - 7) << std::endl;
+	}
+	
+	return directories;
 }

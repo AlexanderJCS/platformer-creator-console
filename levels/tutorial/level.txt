@@ -1,0 +1,8 @@
+                                                                                                         G
+                                                                                                         G
+                                                                                                         G
+  Use A and D              Use W to jump                Dont fall in                 Touch G to          G                              
+  to move                                 XXXXXXX                                    win                 G 
+                                          X     X                                                        G
+        O                                 X     X                                                        G
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX     XXXXXXXXXX    XXXXXXXXXXXXXX    XXXXXXXXXXXXXXXXXXXXXXXXXX

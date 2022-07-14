@@ -42,6 +42,9 @@ class Game
 	std::vector<gameObject> players;
 	std::vector<gameObject> gameObjects;
 	std::vector<gameObject> goals;
+	std::vector<gameObject> roombas;
+	std::vector<gameObject> spikes;
+	
 	std::map<std::string, std::string> colorData;
 
 	int width = 0;
@@ -66,7 +69,7 @@ class Game
 		}
 
 		// Go to the first index with the x value
-		for (int i = xIndex; x >= 0 && objects[i].x == x; i--)
+		for (int i = xIndex; x > 0 && objects[i].x == x; i--)
 		{
 			xIndex = i;
 		}
@@ -87,16 +90,16 @@ class Game
 	// Finds the index of an item with a certain x value
 	int findItemIndex(int target, int start, int end, std::vector<gameObject> objects)
 	{
-		if (start + 1 == end)
-		{
-			return -1;
-		}
-
-		int middle = (start + end) / 2;
+		unsigned int middle = (start + end) / 2;
 
 		if (objects[middle].x == target)
 		{
 			return middle;
+		}
+
+		if (start + 1 == end)
+		{
+			return -1;
 		}
 
 		if (objects[middle].x > target)
@@ -113,14 +116,14 @@ class Game
 		return -1;
 	}
 
-	bool validMove(int x, int y)
+	bool validMove(int x, int y, std::vector<gameObject> colliders)
 	{
 		if (x <= 0 || x > width)
 		{
 			return false;
 		}
 
-		if (findCharAtCoords(x, y, gameObjects) == ' ')
+		if (findCharAtCoords(x, y, colliders) == ' ')
 		{
 			return true;
 		}
@@ -133,8 +136,15 @@ class Game
 		std::vector<gameObject> allObjects = gameObjects;
 		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
 		allObjects.insert(allObjects.end(), players.begin(), players.end());
+		allObjects.insert(allObjects.end(), roombas.begin(), roombas.end());
 
 		std::sort(allObjects.begin(), allObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
+
+		for (auto& object : allObjects)
+		{
+			object.x = round(object.x);
+			object.y = round(object.y);
+		}
 
 		std::cout << "\033[1;1H";  // Move cursor to top left
 
@@ -183,16 +193,16 @@ class Game
 		}
 	}
 
-	void movePlayers()
+	void moveObjects(std::vector<gameObject>& objects)
 	{
-		for (auto& player : players)
+		for (auto& object : objects)
 		{
-			float originalX = player.x;
-			float originalY = player.y;
-			int x1 = round(player.x);
-			int y1 = round(player.y);
-			int x2 = round(player.x + player.xVel);
-			int y2 = round(player.y + player.yVel);
+			float originalX = object.x;
+			float originalY = object.y;
+			int x1 = round(object.x);
+			int y1 = round(object.y);
+			int x2 = round(object.x + object.xVel);
+			int y2 = round(object.y + object.yVel);
 
 			if (x1 > x2)
 			{
@@ -206,32 +216,32 @@ class Game
 
 			for (int i = x1; i <= x2; i++)
 			{
-				if (!validMove(i, round(player.y)))
+				if (!validMove(i, round(object.y), gameObjects))
 				{
-					player.xVel = 0;
+					object.xVel = 0;
 					break;
 				}
 			}
 
-			if (player.xVel != 0)
+			if (object.xVel != 0)
 			{
-				player.x += player.xVel;
+				object.x += object.xVel;
 			}
 
 			for (int i = y1; i <= y2; i++)
 			{
-				if (!validMove(round(player.x), i))
+				if (!validMove(round(object.x), i, gameObjects))
 				{
-					player.yVel = 0;
+					object.yVel = 0;
 					break;
 				}
 
-				player.y = i;
+				object.y = i;
 			}
 
-			if (player.yVel != 0)  // If the loop was not broken out of
+			if (object.yVel != 0)  // If the loop was not broken out of
 			{
-				player.y = originalY + player.yVel;
+				object.y = originalY + object.yVel;
 			}
 		}
 	}
@@ -239,11 +249,11 @@ class Game
 	void getInput()
 	{
 		// Jump
-		if (GetAsyncKeyState('W'))
+		if (GetKeyState('W') & 0x8000)
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(round(player.x), std::floor(player.y + 1)) && player.yVel == 0)
+				if (!validMove(round(player.x), std::floor(player.y + 1), gameObjects) && player.yVel == 0)
 				{
 					player.yVel -= JUMP_VEL;
 				}
@@ -251,7 +261,7 @@ class Game
 		}
 
 		// Move right
-		if (GetAsyncKeyState('D'))
+		if (GetKeyState('D') & 0x8000)
 		{
 			for (auto& player : players)
 			{
@@ -260,7 +270,7 @@ class Game
 		}
 
 		// Move left
-		else if (GetAsyncKeyState('A'))
+		else if (GetKeyState('A') & 0x8000)
 		{
 			for (auto& player : players)
 			{
@@ -289,7 +299,6 @@ class Game
 
 		return false;
 	}
-
 
 	/*
 	Check if a game object is outside the screen. If it is,
@@ -326,10 +335,72 @@ class Game
 		return false;
 	}
 
+	/*
+	Reverse the velocities of the roombas if it is at vel = 0.
+	*/
+
+	void turnRoombas()
+	{
+		for (auto& roomba : roombas)
+		{
+			if (roomba.xVel == 0)
+			{
+				return;
+			}
+
+			if (!validMove(round(roomba.x - 1), round(roomba.y), gameObjects))
+			{
+				roomba.xVel = 0.25;
+			}
+
+			else if (!validMove(round(roomba.x + 1), round(roomba.y), gameObjects))
+			{
+				roomba.xVel = -0.25;
+			}
+		}
+	}
+
+	/*
+	Checks if the player died to an enemy or spike
+	*/
+
+	bool diedToEnemy()
+	{
+		std::vector<gameObject> allDeathObjects = gameObjects;
+		allDeathObjects.insert(allDeathObjects.end(), roombas.begin(), roombas.end());
+		allDeathObjects.insert(allDeathObjects.end(), spikes.begin(), spikes.end());
+
+		std::sort(allDeathObjects.begin(), allDeathObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
+		
+		for (auto& deathObject : allDeathObjects)
+		{
+			deathObject.x = round(deathObject.x);
+			deathObject.y = round(deathObject.y);
+		}
+
+		for (auto& player : players)
+		{
+			if (!validMove(round(player.x), round(player.y), allDeathObjects))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 public:
 	Game()
 	{
-		std::cout << "Input the level name:\n> ";
+		std::cout << "Input the level name. Available levels:\n";
+		std::vector<std::string> levels = getDirectories("levels");
+
+		for (auto& level : levels)
+		{
+			std::cout << level;
+		}
+
+		std::cout << "\nChoose your level\n> ";
 		std::string levelname;
 		std::cin >> levelname;
 
@@ -351,6 +422,17 @@ public:
 				goals.push_back(gameObj);
 			}
 
+			else if (gameObj.symbol == '@')
+			{
+				gameObj.xVel = -0.25;
+				roombas.push_back(gameObj);
+			}
+
+			else if (gameObj.symbol == '*')
+			{
+				spikes.push_back(gameObj);
+			}
+
 			else
 			{
 				gameObjects.push_back(gameObj);
@@ -363,17 +445,30 @@ public:
 
 	void run()
 	{
+		system("cls");
+		
 		while (true)
 		{
 			applyGravity();
-			movePlayers();
+
+			moveObjects(players);
+			moveObjects(roombas);
+			turnRoombas();
+
 			ShowConsoleCursor(false);
-			draw();
 			getInput();
+			draw();
 
 			if (won())
 			{
 				std::cout << "\nYou won!" << std::endl;
+				Sleep(4000);
+				return;
+			}
+
+			if (diedToEnemy())
+			{
+				std::cout << "\nYou died to an enemy!" << std::endl;
 				Sleep(4000);
 				return;
 			}
@@ -393,7 +488,6 @@ public:
 
 int main()
 {
-	system("cls");
 	Game g;
 	g.run();
 	return 0;
