@@ -57,6 +57,23 @@ The `colors.txt` file has the object that is colored and a corresponding ANSI es
 O 34;1m
 G 32m
 ```
+Below is a list of codes you can use:
+- Black: `30m`
+- Red: `31m`
+- Green: `32m`
+- Yellow: `33m`
+- Blue: `34m`
+- Magenta: `35m`
+- Cyan: `36m`
+- White: `37m`
+- Bright Black: `30;1m`
+- Bright Red: `31;1m`
+- Bright Green: `32;1m`
+- Bright Yellow: `33;1m`
+- Bright Blue: `34;1m`
+- Bright Magenta: `35;1m`
+- Bright Cyan: `36;1m`
+- Bright White: `37;1m`
 
 ## Known Issues
 
