@@ -58,12 +58,10 @@ G 32m
 
 ## Known Issues
 
-- The leftmost column of a level is not visible
 - 10+ compiler warnings in Visual Studio
 
 ## Planned Features
 
 - Default levels
-- Enemies
-- Death objects/spikes
+- Configuration files to change how the level behaves
 - Powerups
