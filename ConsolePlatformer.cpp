@@ -6,12 +6,12 @@
 #include <cmath>
 #include <map>
 
-#include "level_utils.h"
+#include "levelUtils.h"
 
 const short SCREEN_WIDTH = 30;
 const short SCREEN_HEIGHT = 10;
-const float GRAVITY = 0.35;
-const float JUMP_VEL = 1.9;
+const float GRAVITY = float(0.35);
+const float JUMP_VEL = float(1.9);
 
 
 void swapVars(int& a, int& b)
@@ -44,14 +44,19 @@ class Game
 	std::vector<gameObject> goals;
 	std::vector<gameObject> roombas;
 	std::vector<gameObject> spikes;
+	std::vector<gameObject> nonCollide;
 	
 	std::map<std::string, std::string> colorData;
 
 	int width = 0;
 	int height = 0;
 
-	// Finds the char of the object at x, y
-	// Mainly used for the draw method
+	/*
+	Finds the symbol of a gameObject at a given coordinate, returns ' ' if none.
+
+	Used for the draw method and for the validMove method.
+	*/
+	
 	char findCharAtCoords(int x, int y, std::vector<gameObject> objects)
 	{
 		if (x < 0 || x > width || y < 0 || y > height)
@@ -60,7 +65,7 @@ class Game
 		}
 
 		// Find the index of the x value
-		int xIndex = findItemIndex(x, 0, objects.size(), objects);
+		size_t xIndex = findItemIndex(x, 0, objects.size(), objects);
 
 		// If it could not find the index, return nothing
 		if (xIndex == -1)
@@ -69,14 +74,14 @@ class Game
 		}
 
 		// Go to the first index with the x value
-		for (int i = xIndex; x > 0 && objects[i].x == x; i--)
+		for (size_t i = xIndex; x > 0 && objects[i].x == x; i--)
 		{
 			xIndex = i;
 		}
 
 		// Var index is now at the first value
 		// Now, iterate through all x values to see if the y matches
-		for (int i = xIndex; i < objects.size() && i >= 0 && round(objects[i].x) == x; i++)
+		for (size_t i = xIndex; i < objects.size() && i >= 0 && round(objects[i].x) == x; i++)
 		{
 			if (round(objects[i].y) == y)
 			{
@@ -87,7 +92,13 @@ class Game
 		return ' ';
 	}
 
-	// Finds the index of an item with a certain x value
+	/*
+	Finds the item index of a given x value inside a vector of objects
+	
+	NOTICE: This uses the binary search algorithm for efficiency. Therefore,
+	        the objects vector must be sorted from lowest to highest x value
+	*/
+
 	int findItemIndex(int target, int start, int end, std::vector<gameObject> objects)
 	{
 		unsigned int middle = (start + end) / 2;
@@ -116,6 +127,11 @@ class Game
 		return -1;
 	}
 
+	/*
+	Checks if a given x and y coordinate intersects with
+	a vector of colliders.
+	*/
+
 	bool validMove(int x, int y, std::vector<gameObject> colliders)
 	{
 		if (x <= 0 || x > width)
@@ -131,13 +147,17 @@ class Game
 		return false;
 	}
 
+	/*
+	Outputs the screen
+	*/
+
 	void draw()
 	{
 		std::vector<gameObject> allObjects = gameObjects;
 		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
-		allObjects.insert(allObjects.end(), players.begin(), players.end());
 		allObjects.insert(allObjects.end(), roombas.begin(), roombas.end());
 		allObjects.insert(allObjects.end(), spikes.begin(), spikes.end());
+		allObjects.insert(allObjects.end(), nonCollide.begin(), nonCollide.end());
 
 		std::sort(allObjects.begin(), allObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
 
@@ -162,16 +182,27 @@ class Game
 		{
 			std::cout << "#";
 
-			for (int x = players[0].x - SCREEN_WIDTH / 2;
+			for (int x = int(players[0].x) - SCREEN_WIDTH / 2;
 				x <= players[0].x + SCREEN_WIDTH / 2;
 				x++)
 			{
-				char symbol = findCharAtCoords(x, y, allObjects);
+				char symbol = ' ';
+				for (auto& player : players)
+				{
+					if (round(player.x) == x && round(player.y) == y)
+					{	
+						symbol = player.symbol;
+						goto skip;
+					}
+				}
+				
+				symbol = findCharAtCoords(x, y, allObjects);
 
+				skip:
 				if (colorData.find(std::string(1, symbol)) != colorData.end())
 				{
-					std::string ansi_code = colorData[std::string(1, symbol)];
-					std::cout << "\u001b[" + ansi_code;
+					std::string ansiCode = colorData[std::string(1, symbol)];
+					std::cout << "\u001b[" + ansiCode;
 				}
 
 				std::cout << symbol << " \u001b[0m";
@@ -186,6 +217,10 @@ class Game
 		}
 	}
 
+	/*
+	Apply gravity to the player(s).
+	*/
+
 	void applyGravity()
 	{
 		for (auto& player : players)
@@ -194,16 +229,21 @@ class Game
 		}
 	}
 
+	/*
+	Move all the objects in a vector of gameObjects by
+	applying the velocities if it is a valid move.
+	*/
+
 	void moveObjects(std::vector<gameObject>& objects)
 	{
 		for (auto& object : objects)
 		{
 			float originalX = object.x;
 			float originalY = object.y;
-			int x1 = round(object.x);
-			int y1 = round(object.y);
-			int x2 = round(object.x + object.xVel);
-			int y2 = round(object.y + object.yVel);
+			int x1 = int(round(object.x));
+			int y1 = int(round(object.y));
+			int x2 = int(round(object.x + object.xVel));
+			int y2 = int(round(object.y + object.yVel));
 
 			if (x1 > x2)
 			{
@@ -217,7 +257,7 @@ class Game
 
 			for (int i = x1; i <= x2; i++)
 			{
-				if (!validMove(i, round(object.y), gameObjects))
+				if (!validMove(i, int(round(object.y)), gameObjects))
 				{
 					object.xVel = 0;
 					break;
@@ -231,13 +271,13 @@ class Game
 
 			for (int i = y1; i <= y2; i++)
 			{
-				if (!validMove(round(object.x), i, gameObjects))
+				if (!validMove(int(round(object.x)), i, gameObjects))
 				{
 					object.yVel = 0;
 					break;
 				}
 
-				object.y = i;
+				object.y = float(i + 0.35);
 			}
 
 			if (object.yVel != 0)  // If the loop was not broken out of
@@ -247,6 +287,10 @@ class Game
 		}
 	}
 
+	/*
+	Get the input of the player and apply velocity accordingly
+	*/
+
 	void getInput()
 	{
 		// Jump
@@ -254,7 +298,8 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(round(player.x), std::floor(player.y + 1), gameObjects) && player.yVel == 0)
+				if (!validMove(int(round(player.x)), int(player.y + 1), gameObjects) 
+					&& player.yVel == 0)
 				{
 					player.yVel -= JUMP_VEL;
 				}
@@ -288,6 +333,10 @@ class Game
 		}
 	}
 
+	/*
+	Check if the player fell out of the map.
+	*/
+
 	bool died()
 	{
 		for (auto& player : players)
@@ -310,12 +359,12 @@ class Game
 	{
 		if (gameObj.x > width)
 		{
-			width = gameObj.x;
+			width = int(gameObj.x);
 		}
 
 		if (gameObj.y > height)
 		{
-			height = gameObj.y;
+			height = int(gameObj.y);
 		}
 	}
 
@@ -349,12 +398,12 @@ class Game
 				return;
 			}
 
-			if (!validMove(round(roomba.x - 1), round(roomba.y), gameObjects))
+			if (!validMove(int(round(roomba.x - 1)), int(round(roomba.y)), gameObjects))
 			{
 				roomba.xVel = 0.25;
 			}
 
-			else if (!validMove(round(roomba.x + 1), round(roomba.y), gameObjects))
+			else if (!validMove(int(round(roomba.x + 1)), int(round(roomba.y)), gameObjects))
 			{
 				roomba.xVel = -0.25;
 			}
@@ -367,8 +416,7 @@ class Game
 
 	bool diedToEnemy()
 	{
-		std::vector<gameObject> allDeathObjects = gameObjects;
-		allDeathObjects.insert(allDeathObjects.end(), roombas.begin(), roombas.end());
+		std::vector<gameObject> allDeathObjects = roombas;
 		allDeathObjects.insert(allDeathObjects.end(), spikes.begin(), spikes.end());
 
 		std::sort(allDeathObjects.begin(), allDeathObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
@@ -381,9 +429,12 @@ class Game
 
 		for (auto& player : players)
 		{
-			if (!validMove(round(player.x), round(player.y), allDeathObjects))
+			for (auto& deathObject : allDeathObjects)
 			{
-				return true;
+				if (round(player.x) == deathObject.x && round(player.y) == deathObject.y)
+				{
+					return true;
+				}
 			}
 		}
 
@@ -405,14 +456,37 @@ public:
 		std::string levelname;
 		std::cin >> levelname;
 
-		auto contents = read_file("levels/" + levelname + "/level.txt");
-		auto formatted = format_contents(contents);
+		// Get the objects the player does not collide with
+		std::map<std::string, std::string> config = parseConfig("levels/" + levelname + "/config.txt");
+		
+		std::string nonCollideables = config["NON_COLLIDE"];
+
+		// Get the contents of the txt file
+
+		auto contents = readFile("levels/" + levelname + "/level.txt");
+		auto formatted = formatContents(contents);
 
 		// Decide if the gameObject goes in the players or gameObjects vector
 		for (gameObject& gameObj : formatted)
 		{
 			checkIfNewSize(gameObj);
+			
+			bool inNonCollide = false;
+			// Check if the symbol is a non-collideable
+			for (char nonCollideable : nonCollideables)
+			{
+				if (gameObj.symbol == nonCollideable)
+				{
+					inNonCollide = true;
+					nonCollide.push_back(gameObj);
+				}
+			}
 
+			if (inNonCollide)
+			{
+				continue;
+			}
+		
 			if (gameObj.symbol == 'O')
 			{
 				players.push_back(gameObj);
@@ -441,7 +515,7 @@ public:
 		}
 
 		// Get the color map
-		colorData = parse_config("levels/" + levelname + "/colors.txt");
+		colorData = parseConfig("levels/" + levelname + "/colors.txt");
 	}
 
 	void run()
@@ -450,14 +524,15 @@ public:
 		
 		while (true)
 		{
+			ShowConsoleCursor(false);
+			
+			getInput();
 			applyGravity();
 
 			moveObjects(players);
 			moveObjects(roombas);
+			
 			turnRoombas();
-
-			ShowConsoleCursor(false);
-			getInput();
 			draw();
 
 			if (won())
@@ -467,14 +542,7 @@ public:
 				return;
 			}
 
-			if (diedToEnemy())
-			{
-				std::cout << "\nYou died to an enemy!" << std::endl;
-				Sleep(4000);
-				return;
-			}
-
-			if (died())
+			if (died() || diedToEnemy())
 			{
 				std::cout << "\nYou died." << std::endl;
 				Sleep(4000);

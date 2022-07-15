@@ -26,7 +26,7 @@ After navigating to the latest release, download the zipped folder with the comp
 
 Just a note before proceeding: this project is made in Visual Studio 2022. If you have any issues with the g++ compiler, please check if it compiles in Visual Studio.
 
-To compile, use `g++ ConsolePlatformer.cpp level_utils.cpp`
+To compile, execute the command `g++ ConsolePlatformer.cpp levelUtils.cpp`
 
 ## Creating your own level
 
@@ -38,7 +38,7 @@ In `level.txt`, create your level using spaces as air and other characters as gr
 
 - O (uppercase o, not zero): Player
 - G: goal
-- @: roomba (enemy)
+- @: floorba (enemy)
 - *: spike
 
 **Every level needs a player to be ran. Otherwise, it will crash.** 
@@ -77,8 +77,7 @@ Below is a list of codes you can use:
 
 ## Known Issues
 
-- 10+ compiler warnings in Visual Studio
-- Cannot jump when there is 1 char of free space above you
+No known issues at the time
 
 ## Planned Features
 
