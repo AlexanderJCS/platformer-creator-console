@@ -26,7 +26,9 @@ After navigating to the latest release, download the zipped folder with the comp
 
 Just a note before proceeding: this project is made in Visual Studio 2022. If you have any issues with the g++ compiler, please check if it compiles in Visual Studio.
 
-To compile, execute the command `g++ ConsolePlatformer.cpp levelUtils.cpp`
+To compile, execute the command `g++ ConsolePlatformer.cpp levelUtils.cpp -O3`
+
+The `-O3` flag is for performance improvements and increases compile time. For quick testing, you may want to consider not using this flag.
 
 ## Creating your own level
 
