@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <algorithm>
 #include <iostream>
+#include <chrono>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -167,20 +168,20 @@ class Game
 			object.y = round(object.y);
 		}
 
-		std::cout << "\033[1;1H";  // Move cursor to top left
+		std::string screen = "";
 
 		// Draw top border
 		for (short i = 0; i <= SCREEN_WIDTH + 1; i++)
 		{
-			std::cout << "##";
+			screen += "##";
 		}
 
-		std::cout << "\n";
+		screen += "\n";
 
 		// Print the main screen
 		for (int y = 0; y < SCREEN_HEIGHT; y++)
 		{
-			std::cout << "#";
+			screen += "#";
 
 			for (int x = int(players[0].x) - SCREEN_WIDTH / 2;
 				x <= players[0].x + SCREEN_WIDTH / 2;
@@ -202,19 +203,22 @@ class Game
 				if (colorData.find(std::string(1, symbol)) != colorData.end())
 				{
 					std::string ansiCode = colorData[std::string(1, symbol)];
-					std::cout << "\u001b[" + ansiCode;
+					screen += "\u001b[" + ansiCode;
 				}
 
-				std::cout << symbol << " \u001b[0m";
+				screen += std::string(1, symbol) + " \u001b[0m";
 			}
-			std::cout << "#\n";
+			screen += "#\n";
 		}
 
 		// Draw bottom border
 		for (short i = 0; i <= SCREEN_WIDTH + 1; i++)
 		{
-			std::cout << "##";
+			screen += "##";
 		}
+
+		std::cout << "\033[1;1H";  // Move cursor to top left
+		std::cout << screen;
 	}
 
 	/*
@@ -524,6 +528,8 @@ public:
 		
 		while (true)
 		{
+			auto frameStart = std::chrono::high_resolution_clock::now();
+			
 			ShowConsoleCursor(false);
 			
 			getInput();
@@ -549,7 +555,10 @@ public:
 				return;
 			}
 
-			Sleep(50);
+			auto frameEnd = std::chrono::high_resolution_clock::now();
+			auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
+
+			Sleep(50 - frameTime.count());
 		}
 	}
 };
