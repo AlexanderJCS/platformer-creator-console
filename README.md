@@ -84,6 +84,6 @@ No known issues at the time
 ## Planned Features
 
 - Default levels
+- Scoring system/highscore
 - Full support for 2+ player objects (mainly collision between player objects)
-- Allow leniency with jumps (allows the player to jump when on air for a split second) 
 - Configuration files to screen width, screen height, gravity, and jump vel
