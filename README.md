@@ -42,6 +42,7 @@ In `level.txt`, create your level using spaces as air and other characters as gr
 - G: goal
 - @: floorba (enemy)
 - *: spike
+- $: coin
 
 **Every level needs a player to be ran. Otherwise, it will crash.** 
 
@@ -84,6 +85,6 @@ No known issues at the time
 ## Planned Features
 
 - Default levels
-- Scoring system/highscore
+- Highscore
 - Full support for 2+ player objects (mainly collision between player objects)
 - Configuration files to screen width, screen height, gravity, and jump vel
