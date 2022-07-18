@@ -1,8 +1,8 @@
-                                                                                 G
-              XXXXXXXXXXXXXXXXXXXXXXXX                                           G
-              X                      X                                           G
-   *   O      XXXXXXXXXXXXXXXXXXXXXXXX                                           G
-   *                                                                             G
-   *                                                                             G
-   X           X              @      X                                           G
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    XXXXXXXXXXXXXXX      XXXXXXXXXXXXX
+              XXXXXXXXXXXXXXXXXXXXXXXX                  *                                             X            X    *    G   
+              X                                         *                                             X            X    *    G  
+              X  $$$$                                   *                                             X            X    *    G    
+              XXXXXXXXXXXXXXXXXXXXXXXXXXX               *                                             XXXXXXXXXXXXXX         G       
+                                                                                    XXXXXX                                   G   
+         O                                      XXXXX                               X                                        G 
+              X               @      X                  $$$$    XXXXX  X@           X $$$          X      @   @    X    *    G      
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX           XXXXXX          XXXXXXXXXXXXXXXXXXX       XXXXXXXXXXXXXXXXXXXXXXXXXXXXX    

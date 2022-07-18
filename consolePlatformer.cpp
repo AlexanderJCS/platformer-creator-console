@@ -23,7 +23,7 @@ void swapVars(int& a, int& b)
 }
 
 
-void ShowConsoleCursor(bool showFlag)
+void showConsoleCursor(bool showFlag)
 {
 	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -41,13 +41,17 @@ class Game
 	// All player objects have the same controls, this is not multiplayer
 	// Managing two players can make for some interesting levels, though
 	std::vector<gameObject> players;
-	std::vector<gameObject> gameObjects;
+	std::vector<gameObject> colliders;
 	std::vector<gameObject> goals;
-	std::vector<gameObject> roombas;
+	std::vector<gameObject> floorbas;
 	std::vector<gameObject> spikes;
-	std::vector<gameObject> nonCollide;
+	std::vector<gameObject> nonColliders;
+	std::vector<gameObject> coins;
 	
 	std::map<std::string, std::string> colorData;
+
+	int collectedCoins = 0;
+	size_t totalCoins = 0;
 
 	int width = 0;
 	int height = 0;
@@ -74,9 +78,16 @@ class Game
 			return ' ';
 		}
 
+		objects[0].x;
+
 		// Go to the first index with the x value
 		for (size_t i = xIndex; x > 0 && objects[i].x == x; i--)
 		{
+			if (i == 0)
+			{
+				break;
+			}
+			
 			xIndex = i;
 		}
 
@@ -91,6 +102,41 @@ class Game
 		}
 
 		return ' ';
+	}
+
+	/*
+	Returns true if an item was removed
+	*/
+
+	bool removeItemAtCoords(int x, int y, std::vector<gameObject>& objects)
+	{
+		if (objects.size() == 0)
+		{
+			return false;
+		}
+		
+		size_t xIndex = findItemIndex(x, 0, objects.size(), objects);
+		
+		if (xIndex == -1)
+		{
+			return false;
+		}
+
+		for (size_t i = xIndex; i > 0 && objects[i].x == x; i--)
+		{
+			xIndex = i;
+		}
+
+		for (size_t i = xIndex; i < objects.size() && i >= 0 && round(objects[i].x) == x; i++)
+		{
+			if (round(objects[i].y) == y)
+			{
+				objects.erase(objects.begin() + i);
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	/*
@@ -135,7 +181,7 @@ class Game
 
 	bool validMove(int x, int y, std::vector<gameObject> colliders)
 	{
-		if (x <= 0 || x > width)
+		if (x < 0 || x > width)
 		{
 			return false;
 		}
@@ -154,11 +200,12 @@ class Game
 
 	void draw()
 	{
-		std::vector<gameObject> allObjects = gameObjects;
+		std::vector<gameObject> allObjects = colliders;
 		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
-		allObjects.insert(allObjects.end(), roombas.begin(), roombas.end());
+		allObjects.insert(allObjects.end(), floorbas.begin(), floorbas.end());
 		allObjects.insert(allObjects.end(), spikes.begin(), spikes.end());
-		allObjects.insert(allObjects.end(), nonCollide.begin(), nonCollide.end());
+		allObjects.insert(allObjects.end(), nonColliders.begin(), nonColliders.end());
+		allObjects.insert(allObjects.end(), coins.begin(), coins.end());
 
 		std::sort(allObjects.begin(), allObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
 
@@ -199,14 +246,22 @@ class Game
 				
 				symbol = findCharAtCoords(x, y, allObjects);
 
-				skip:
+			skip:
+				bool coloredSpace = false;
+				
 				if (colorData.find(std::string(1, symbol)) != colorData.end())
 				{
 					std::string ansiCode = colorData[std::string(1, symbol)];
 					screen += "\u001b[" + ansiCode;
+					coloredSpace = true;
 				}
 
-				screen += std::string(1, symbol) + " \u001b[0m";
+				screen += std::string(1, symbol) + " ";
+				
+				if (coloredSpace)
+				{
+					screen += "\u001b[0m";
+				}
 			}
 			screen += "#\n";
 		}
@@ -219,6 +274,8 @@ class Game
 
 		std::cout << "\033[1;1H";  // Move cursor to top left
 		std::cout << screen;
+
+		std::cout << "\nCoins: " << "\u001b[32;1m" << collectedCoins << " out of " << totalCoins << "\u001b[0m" << std::endl;
 	}
 
 	/*
@@ -261,7 +318,7 @@ class Game
 
 			for (int i = x1; i <= x2; i++)
 			{
-				if (!validMove(i, int(round(object.y)), gameObjects))
+				if (!validMove(i, int(round(object.y)), colliders))
 				{
 					object.xVel = 0;
 					break;
@@ -275,7 +332,7 @@ class Game
 
 			for (int i = y1; i <= y2; i++)
 			{
-				if (!validMove(int(round(object.x)), i, gameObjects))
+				if (!validMove(int(round(object.x)), i, colliders))
 				{
 					object.yVel = 0;
 					break;
@@ -302,7 +359,7 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(int(round(player.x)), int(player.y + 1), gameObjects) 
+				if (!validMove(int(round(player.x)), int(player.y + 1), colliders) 
 					&& player.yVel == 0)
 				{
 					player.yVel -= JUMP_VEL;
@@ -393,23 +450,23 @@ class Game
 	Reverse the velocities of the roombas if it is at vel = 0.
 	*/
 
-	void turnRoombas()
+	void turnFloorbas()
 	{
-		for (auto& roomba : roombas)
+		for (auto& floorba : floorbas)
 		{
-			if (roomba.xVel == 0)
+			if (floorba.xVel == 0)
 			{
 				return;
 			}
 
-			if (!validMove(int(round(roomba.x - 1)), int(round(roomba.y)), gameObjects))
+			if (!validMove(int(round(floorba.x - 1)), int(round(floorba.y)), colliders))
 			{
-				roomba.xVel = 0.25;
+				floorba.xVel = 0.25;
 			}
 
-			else if (!validMove(int(round(roomba.x + 1)), int(round(roomba.y)), gameObjects))
+			else if (!validMove(int(round(floorba.x + 1)), int(round(floorba.y)), colliders))
 			{
-				roomba.xVel = -0.25;
+				floorba.xVel = -0.25;
 			}
 		}
 	}
@@ -420,7 +477,7 @@ class Game
 
 	bool diedToEnemy()
 	{
-		std::vector<gameObject> allDeathObjects = roombas;
+		std::vector<gameObject> allDeathObjects = floorbas;
 		allDeathObjects.insert(allDeathObjects.end(), spikes.begin(), spikes.end());
 
 		std::sort(allDeathObjects.begin(), allDeathObjects.end(), [](gameObject a, gameObject b) { return a.x < b.x; });
@@ -444,9 +501,8 @@ class Game
 
 		return false;
 	}
-
-public:
-	Game()
+	
+	std::string getLevelName()
 	{
 		std::cout << "Input the level name. Available levels:\n";
 		std::vector<std::string> levels = getDirectories("levels");
@@ -460,29 +516,25 @@ public:
 		std::string levelname;
 		std::cin >> levelname;
 
-		// Get the objects the player does not collide with
-		std::map<std::string, std::string> config = parseConfig("levels/" + levelname + "/config.txt");
-		
-		std::string nonCollideables = config["NON_COLLIDE"];
+		return levelname;
+	}
 
-		// Get the contents of the txt file
-
-		auto contents = readFile("levels/" + levelname + "/level.txt");
-		auto formatted = formatContents(contents);
-
-		// Decide if the gameObject goes in the players or gameObjects vector
-		for (gameObject& gameObj : formatted)
+	// Decide which vectors the objects go in
+	void decideVectors(std::string nonCollideables, std::vector<gameObject> formattedLevel)
+	{
+		for (gameObject& gameObj : formattedLevel)
 		{
 			checkIfNewSize(gameObj);
-			
+
 			bool inNonCollide = false;
+
 			// Check if the symbol is a non-collideable
 			for (char nonCollideable : nonCollideables)
 			{
 				if (gameObj.symbol == nonCollideable)
 				{
 					inNonCollide = true;
-					nonCollide.push_back(gameObj);
+					nonColliders.push_back(gameObj);
 				}
 			}
 
@@ -490,7 +542,7 @@ public:
 			{
 				continue;
 			}
-		
+
 			if (gameObj.symbol == 'O')
 			{
 				players.push_back(gameObj);
@@ -504,7 +556,7 @@ public:
 			else if (gameObj.symbol == '@')
 			{
 				gameObj.xVel = -0.25;
-				roombas.push_back(gameObj);
+				floorbas.push_back(gameObj);
 			}
 
 			else if (gameObj.symbol == '*')
@@ -512,33 +564,74 @@ public:
 				spikes.push_back(gameObj);
 			}
 
+			else if (gameObj.symbol == '$')
+			{
+				coins.push_back(gameObj);
+			}
+
 			else
 			{
-				gameObjects.push_back(gameObj);
+				colliders.push_back(gameObj);
 			}
 		}
+	}
 
-		// Get the color map
+	void collectCoins()
+	{
+		for (auto& player : players)
+		{
+			if (removeItemAtCoords(int(round(player.x)), int(round(player.y)), coins))\
+			{
+				collectedCoins++;
+			}
+		}
+	}
+
+public:
+	Game()
+	{
+		std::string levelname = getLevelName();
+
+		// Get the level contents
+		auto contents = readFile("levels/" + levelname + "/level.txt");
+		auto formatted = formatContents(contents);
+
+		// Get the objects the player does not collide with
+		std::map<std::string, std::string> config = parseConfig("levels/" + levelname + "/config.txt");
+		std::string nonCollideables = config["NON_COLLIDE"];
+
+		// Get the color data
 		colorData = parseConfig("levels/" + levelname + "/colors.txt");
+
+		// Decide if the gameObject goes in the players or gameObjects vector
+		decideVectors(nonCollideables, formatted);
+
+		totalCoins = coins.size();
 	}
 
 	void run()
 	{
 		system("cls");
-		
+		showConsoleCursor(false);
+
+		int iterations = 0;  // Used to perform an action once every 100 frames
+
 		while (true)
 		{
+			iterations++;
+			
 			auto frameStart = std::chrono::high_resolution_clock::now();
-			
-			ShowConsoleCursor(false);
-			
+
 			getInput();
 			applyGravity();
 
 			moveObjects(players);
-			moveObjects(roombas);
+			moveObjects(floorbas);
+
+			collectCoins();
 			
-			turnRoombas();
+			turnFloorbas();
+
 			draw();
 
 			if (won())
@@ -555,10 +648,27 @@ public:
 				return;
 			}
 
+			// Only perform this once every 100 frames to prevent lag
+			if (iterations == 100)
+			{
+				iterations = 0;
+				showConsoleCursor(false);
+			}
+
 			auto frameEnd = std::chrono::high_resolution_clock::now();
 			auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
 
-			Sleep(50 - frameTime.count());
+			unsigned short sleepTime = int(50 - frameTime.count());
+			
+			// If the short is greater than 50, sleep for 0
+			// The only way it can be greater than 50 is if there is an integer overflow
+
+			if (sleepTime > 50)
+			{
+				sleepTime = 0;
+			}
+
+			Sleep(sleepTime);
 		}
 	}
 };
