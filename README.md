@@ -86,5 +86,6 @@ No known issues at the time
 
 - Default levels
 - Highscore
+- Timer for speedrunning
 - Full support for 2+ player objects (mainly collision between player objects)
 - Configuration files to screen width, screen height, gravity, and jump vel
