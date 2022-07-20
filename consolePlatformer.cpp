@@ -295,7 +295,7 @@ class Game
 
 		std::cout << "\nCoins: " << "\u001b[32;1m" << collectedCoins << " out of " << totalCoins << "\u001b[0m\n";
 		auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - gameStart);
-		std::cout << "Time: " << duration;
+		std::cout << "Time: " << duration.count();
 	}
 
 	/*
