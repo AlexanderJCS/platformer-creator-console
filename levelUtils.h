@@ -14,5 +14,6 @@ struct gameObject
 
 std::vector<std::string> readFile(std::string filename);
 std::vector<gameObject> formatContents(std::vector<std::string> contents);
-std::map<std::string, std::string> parseConfig(std::string filepath);
+std::map<std::string, std::string> readConfig(std::string filepath);
+void writeConfig(std::map<std::string, std::string> map, std::string filename);
 std::vector<std::string> getDirectories(std::string filepath);

@@ -7,6 +7,8 @@
 #include <cmath>
 #include <map>
 
+#include <conio.h>
+
 #include "levelUtils.h"
 
 const short SCREEN_WIDTH = 30;
@@ -41,12 +43,14 @@ class Game
 	// All player objects have the same controls, this is not multiplayer
 	// Managing two players can make for some interesting levels, though
 	std::vector<gameObject> players;
-	std::vector<gameObject> colliders;
+	std::vector<gameObject> gameObjects;
 	std::vector<gameObject> goals;
 	std::vector<gameObject> floorbas;
 	std::vector<gameObject> spikes;
 	std::vector<gameObject> nonColliders;
 	std::vector<gameObject> coins;
+
+	std::string levelname;
 	
 	std::map<std::string, std::string> colorData;
 
@@ -56,10 +60,15 @@ class Game
 	int width = 0;
 	int height = 0;
 
+	std::chrono::high_resolution_clock::time_point gameStart;
+
 	/*
 	Finds the symbol of a gameObject at a given coordinate, returns ' ' if none.
 
 	Used for the draw method and for the validMove method.
+
+	NOTICE: This func uses the binary search algorithm for efficiency. Therefore,
+			the objects vector must be sorted from lowest to highest x value
 	*/
 	
 	char findCharAtCoords(int x, int y, std::vector<gameObject> objects)
@@ -105,7 +114,14 @@ class Game
 	}
 
 	/*
-	Returns true if an item was removed
+	Removes an item from the input vector at the given coordinates. Used for
+	removing coins.
+
+	Returns a boolean if an object was removed or not. Used for efficiency in
+	the collectCoins method.
+
+	NOTICE: This func uses the binary search algorithm for efficiency. Therefore,
+			the objects vector must be sorted from lowest to highest x value
 	*/
 
 	bool removeItemAtCoords(int x, int y, std::vector<gameObject>& objects)
@@ -142,7 +158,7 @@ class Game
 	/*
 	Finds the item index of a given x value inside a vector of objects
 	
-	NOTICE: This uses the binary search algorithm for efficiency. Therefore,
+	NOTICE: This func uses the binary search algorithm for efficiency. Therefore,
 	        the objects vector must be sorted from lowest to highest x value
 	*/
 
@@ -175,8 +191,10 @@ class Game
 	}
 
 	/*
-	Checks if a given x and y coordinate intersects with
-	a vector of colliders.
+	Checks if a given x and y coordinate intersects with a vector of colliders.
+
+	NOTICE: This func uses the binary search algorithm for efficiency. Therefore,
+			the objects vector must be sorted from lowest to highest x value
 	*/
 
 	bool validMove(int x, int y, std::vector<gameObject> colliders)
@@ -200,7 +218,7 @@ class Game
 
 	void draw()
 	{
-		std::vector<gameObject> allObjects = colliders;
+		std::vector<gameObject> allObjects = gameObjects;
 		allObjects.insert(allObjects.end(), goals.begin(), goals.end());
 		allObjects.insert(allObjects.end(), floorbas.begin(), floorbas.end());
 		allObjects.insert(allObjects.end(), spikes.begin(), spikes.end());
@@ -275,7 +293,9 @@ class Game
 		std::cout << "\033[1;1H";  // Move cursor to top left
 		std::cout << screen;
 
-		std::cout << "\nCoins: " << "\u001b[32;1m" << collectedCoins << " out of " << totalCoins << "\u001b[0m" << std::endl;
+		std::cout << "\nCoins: " << "\u001b[32;1m" << collectedCoins << " out of " << totalCoins << "\u001b[0m\n";
+		auto duration = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - gameStart);
+		std::cout << "Time: " << duration;
 	}
 
 	/*
@@ -305,7 +325,7 @@ class Game
 			int y1 = int(round(object.y));
 			int x2 = int(round(object.x + object.xVel));
 			int y2 = int(round(object.y + object.yVel));
-
+			
 			if (x1 > x2)
 			{
 				swapVars(x1, x2);
@@ -316,9 +336,10 @@ class Game
 				swapVars(y1, y2);
 			}
 
+			// Iterate through every position the player will go through and check if it is valid
 			for (int i = x1; i <= x2; i++)
 			{
-				if (!validMove(i, int(round(object.y)), colliders))
+				if (!validMove(i, int(round(object.y)), gameObjects))
 				{
 					object.xVel = 0;
 					break;
@@ -332,7 +353,7 @@ class Game
 
 			for (int i = y1; i <= y2; i++)
 			{
-				if (!validMove(int(round(object.x)), i, colliders))
+				if (!validMove(int(round(object.x)), i, gameObjects))
 				{
 					object.yVel = 0;
 					break;
@@ -349,7 +370,7 @@ class Game
 	}
 
 	/*
-	Get the input of the player and apply velocity accordingly
+	Get the input of the player and apply player velocity accordingly
 	*/
 
 	void getInput()
@@ -359,7 +380,7 @@ class Game
 		{
 			for (auto& player : players)
 			{
-				if (!validMove(int(round(player.x)), int(player.y + 1), colliders) 
+				if (!validMove(int(round(player.x)), int(player.y + 1), gameObjects) 
 					&& player.yVel == 0)
 				{
 					player.yVel -= JUMP_VEL;
@@ -429,6 +450,14 @@ class Game
 		}
 	}
 
+	/*
+	Checks if the player won.
+
+	Returns:
+		true if the player won
+		false if the game is ongoing.
+	*/
+
 	bool won()
 	{
 		for (auto& player : players)
@@ -447,7 +476,7 @@ class Game
 	}
 
 	/*
-	Reverse the velocities of the roombas if it is at vel = 0.
+	Reverse the velocities of the floorbas if it is at vel = 0.
 	*/
 
 	void turnFloorbas()
@@ -459,12 +488,12 @@ class Game
 				return;
 			}
 
-			if (!validMove(int(round(floorba.x - 1)), int(round(floorba.y)), colliders))
+			if (!validMove(int(round(floorba.x - 1)), int(round(floorba.y)), gameObjects))
 			{
 				floorba.xVel = 0.25;
 			}
 
-			else if (!validMove(int(round(floorba.x + 1)), int(round(floorba.y)), colliders))
+			else if (!validMove(int(round(floorba.x + 1)), int(round(floorba.y)), gameObjects))
 			{
 				floorba.xVel = -0.25;
 			}
@@ -473,6 +502,10 @@ class Game
 
 	/*
 	Checks if the player died to an enemy or spike
+	
+	Returns:
+		true if the player died
+		false if the player did not die
 	*/
 
 	bool diedToEnemy()
@@ -502,6 +535,12 @@ class Game
 		return false;
 	}
 	
+	/*
+	Gets the level name from the player to load.
+
+	Returns: the level name as a string
+	*/
+	
 	std::string getLevelName()
 	{
 		std::cout << "Input the level name. Available levels:\n";
@@ -519,7 +558,10 @@ class Game
 		return levelname;
 	}
 
-	// Decide which vectors the objects go in
+	/*
+	Decide which vector an object belongs to.
+	*/
+
 	void decideVectors(std::string nonCollideables, std::vector<gameObject> formattedLevel)
 	{
 		for (gameObject& gameObj : formattedLevel)
@@ -571,10 +613,14 @@ class Game
 
 			else
 			{
-				colliders.push_back(gameObj);
+				gameObjects.push_back(gameObj);
 			}
 		}
 	}
+
+	/*
+	Upon touching a coin, remove it from the vector and increment the coins variable.
+	*/
 
 	void collectCoins()
 	{
@@ -586,22 +632,46 @@ class Game
 			}
 		}
 	}
+	
+	void checkHighscore(std::chrono::high_resolution_clock::time_point startTime)
+	{
+		// Get start and end time
+		auto endTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+		
+		// Read the config file to see if the player broke a highscore
+		auto prevHighscore = readConfig("levels/" + levelname + "/highscore.txt");
+
+		if (collectedCoins > stoi(prevHighscore["collected_coins"]) || 
+			elapsed_seconds.count() < std::stod(prevHighscore["time"]) &&
+			prevHighscore["collected_coins"] == std::to_string(collectedCoins))
+		{
+			std::cout << "New highscore!";
+			
+			std::map<std::string, std::string> newHighscore = {
+				{"collected_coins", std::to_string(collectedCoins)},
+				{"time", std::to_string(elapsed_seconds.count())}
+			};
+			
+			writeConfig(newHighscore, "levels/" + levelname + "/highscore.txt");
+		}
+	}
 
 public:
 	Game()
 	{
-		std::string levelname = getLevelName();
+		levelname = getLevelName();
 
 		// Get the level contents
 		auto contents = readFile("levels/" + levelname + "/level.txt");
 		auto formatted = formatContents(contents);
 
 		// Get the objects the player does not collide with
-		std::map<std::string, std::string> config = parseConfig("levels/" + levelname + "/config.txt");
+		std::map<std::string, std::string> config = readConfig("levels/" + levelname + "/config.txt");
 		std::string nonCollideables = config["NON_COLLIDE"];
 
 		// Get the color data
-		colorData = parseConfig("levels/" + levelname + "/colors.txt");
+		colorData = readConfig("levels/" + levelname + "/colors.txt");
 
 		// Decide if the gameObject goes in the players or gameObjects vector
 		decideVectors(nonCollideables, formatted);
@@ -616,12 +686,14 @@ public:
 
 		int iterations = 0;  // Used to perform an action once every 100 frames
 
+		gameStart = std::chrono::high_resolution_clock::now();
+
 		while (true)
 		{
 			iterations++;
 			
 			auto frameStart = std::chrono::high_resolution_clock::now();
-
+			
 			getInput();
 			applyGravity();
 
@@ -637,6 +709,7 @@ public:
 			if (won())
 			{
 				std::cout << "\nYou won!" << std::endl;
+				checkHighscore(gameStart);
 				Sleep(4000);
 				return;
 			}
@@ -676,7 +749,31 @@ public:
 
 int main()
 {
-	Game g;
-	g.run();
+	while (true)
+	{
+		system("cls");
+		
+		Game game;
+		game.run();
+
+		showConsoleCursor(true);
+
+		char playAgain;
+		
+		std::cout << "Do you want to play again? (y/n)\n> ";
+		
+		while (_kbhit())
+		{
+			_getch();
+		}
+		
+		std::cin >> playAgain;
+
+		if (playAgain == 'n' || playAgain == 'N')
+		{
+			break;
+		}
+	}
+	
 	return 0;
 }

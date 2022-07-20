@@ -70,7 +70,7 @@ std::vector<gameObject> formatContents(std::vector<std::string> contents)
 }
 
 
-std::map<std::string, std::string> parseConfig(std::string filepath)
+std::map<std::string, std::string> readConfig(std::string filepath)
 {
 	std::map<std::string, std::string> config;
 	std::vector<std::string> contents = readFile(filepath);
@@ -84,6 +84,25 @@ std::map<std::string, std::string> parseConfig(std::string filepath)
 	}
 	
 	return config;
+}
+
+
+void writeConfig(std::map<std::string, std::string> map, std::string filename)
+{
+	std::ofstream file(filename);
+	
+	if (!file.is_open())
+	{
+		std::cout << "Could not open file " << filename << " for writing." << std::endl;
+		return;
+	}
+
+	for (auto const& [key, value] : map)
+	{
+		file << key << " " << value << std::endl;
+	}
+	
+	file.close();
 }
 
 
