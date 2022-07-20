@@ -84,9 +84,5 @@ No known issues at the time
 
 ## Planned Features
 
-- Default levels
-- Highscore
-- Support for vertical levels
-- Timer for speedrunning
-- Full support for 2+ player objects (mainly collision between player objects)
+- Move levels
 - Configuration files to screen width, screen height, gravity, and jump vel
